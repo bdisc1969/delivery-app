@@ -9,9 +9,9 @@ API_KEY = st.secrets["GOOGLE_API_KEY"]
 ORIGIN = "880 East Collin Raye Drive, De Queen, AR 71832"
 
 # Pricing
-FLAT_FEE_WITHIN_8_MILES = 20.00  # $20 flat fee for <= 8 miles
-BASE_FEE_BEYOND_8_MILES = 20.00  # $20 base fee for > 8 miles
-PER_MILE_RATE_BEYOND_8_MILES = 1.25  # $1.25 per mile for > 8 miles
+FLAT_FEE_WITHIN_6_MILES = 20.00  # $20 flat fee for <= 6 miles
+BASE_FEE_BEYOND_6_MILES = 20.00  # $20 base fee for > 6 miles
+PER_MILE_RATE_BEYOND_6_MILES = 1.40  # $1.40 per mile for > 6 miles
 
 def get_distance(destination):
     try:
@@ -43,8 +43,8 @@ if st.button("Calculate"):
             st.error(error)
         else:
             # Calculate price based on distance
-            if distance <= 8:
-                total_price = FLAT_FEE_WITHIN_8_MILES
+            if distance <= 6:
+                total_price = FLAT_FEE_WITHIN_6_MILES
             else:
-                total_price = BASE_FEE_BEYOND_8_MILES + (distance * PER_MILE_RATE_BEYOND_8_MILES)
+                total_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
             st.success(f"Distance: {distance:.2f} miles\nTotal Price: ${total_price:.2f}")
