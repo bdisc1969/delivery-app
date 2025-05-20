@@ -64,8 +64,8 @@ def get_distance(destination):
         return None, f"Error: {str(e)}"
 
 # Web app layout
-st.title("Delivery Price Calculator")
-destination = st.text_input("Enter Delivery Address (e.g., 123 Main St, Texarkana, AR)")
+st.title("Bailey's Delivery Price Calculator")
+destination = st.text_input("Enter Delivery Address (e.g., 880 East Collin Raye Drive, DeQueen, AR)")
 if st.button("Calculate"):
     if not destination:
         st.error("Please enter an address")
