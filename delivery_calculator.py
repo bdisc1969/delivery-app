@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from urllib.parse import quote
+import base64
 
 # Google Maps API key (stored in secrets.toml)
 API_KEY = st.secrets["GOOGLE_API_KEY"]
@@ -12,6 +13,37 @@ ORIGIN = "880 East Collin Raye Drive, De Queen, AR 71832"
 FLAT_FEE_WITHIN_6_MILES = 20.00  # $20 flat fee for <= 6 miles
 BASE_FEE_BEYOND_6_MILES = 20.00  # $20 base fee for > 6 miles
 PER_MILE_RATE_BEYOND_6_MILES = 1.40  # $1.40 per mile for > 6 miles
+
+# Custom CSS for Bailey Blue background, white search bar, and white text
+st.markdown("""
+    <style>
+    /* Main background */
+    .stApp {
+        background-color: #2a2e7f;
+        color: #ffffff;
+    }
+    /* White search bar */
+    .stTextInput > div > input {
+        background-color: #ffffff;
+        color: #000000;
+        font-size: 18px;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    /* White button with blue text */
+    .stButton > button {
+        background-color: #ffffff;
+        color: #2a2e7f;
+        font-size: 18px;
+        padding: 10px 20px;
+        border-radius: 5px;
+    }
+    /* White text for labels and output */
+    .stMarkdown, .stSuccess, .stError {
+        color: #ffffff;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 def get_distance(destination):
     try:
@@ -32,7 +64,7 @@ def get_distance(destination):
         return None, f"Error: {str(e)}"
 
 # Web app layout
-st.title("Bailey's Delivery Price Calculator")
+st.title("Delivery Price Calculator")
 destination = st.text_input("Enter Delivery Address (e.g., 123 Main St, Texarkana, AR)")
 if st.button("Calculate"):
     if not destination:
@@ -48,3 +80,11 @@ if st.button("Calculate"):
             else:
                 total_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
             st.success(f"Distance: {distance:.2f} miles\nTotal Price: ${total_price:.2f}")
+
+# Display QR code (if uploaded to GitHub as qr_code.png)
+try:
+    with open("qr_code.png", "rb") as file:
+        qr_image = file.read()
+    st.image(qr_image, caption="Scan to access this app", width=150)
+except FileNotFoundError:
+    st.write("QR code not available. Upload qr_code.png to GitHub.")
