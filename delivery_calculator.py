@@ -64,7 +64,7 @@ st.markdown("""
 try:
     with open("Bailey Discount - WhiteMan.png", "rb") as file:
         logo_image = file.read()
-    st.image(logo_image, width=200, use_column_width=False)
+    st.image(logo_image, width=200, use_container_width=False)
 except FileNotFoundError:
     st.write("Logo not available. Upload Bailey Discount - WhiteMan.png to GitHub.")
 
@@ -108,6 +108,6 @@ if st.button("Calculate"):
 try:
     with open("qr_code.png", "rb") as file:
         qr_image = file.read()
-    st.image(qr_image, caption="Scan to access this app", width=150)
+    st.image(qr_image, caption="Scan to access this app", width=150, use_container_width=False)
 except FileNotFoundError:
     st.write("QR code not available. Upload qr_code.png to GitHub.")
