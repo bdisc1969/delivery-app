@@ -14,7 +14,7 @@ FLAT_FEE_WITHIN_6_MILES = 20.00  # $20 flat fee for <= 6 miles
 BASE_FEE_BEYOND_6_MILES = 20.00  # $20 base fee for > 6 miles
 PER_MILE_RATE_BEYOND_6_MILES = 1.40  # $1.40 per mile for > 6 miles
 
-# Custom CSS for Bailey Blue background, white search bar, and white text
+# Custom CSS for Bailey Blue background, white search bar, white text, and red results box
 st.markdown("""
     <style>
     /* Main background */
@@ -38,12 +38,35 @@ st.markdown("""
         padding: 10px 20px;
         border-radius: 5px;
     }
-    /* White text for labels and output */
-    .stMarkdown, .stSuccess, .stError {
+    /* White text for labels and errors */
+    .stMarkdown, .stError {
         color: #ffffff;
+    }
+    /* Red box with white text for results */
+    .stSuccess {
+        background-color: #ff0000;
+        color: #ffffff;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 18px;
+    }
+    /* Center logo */
+    .logo {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 200px;
     }
     </style>
 """, unsafe_allow_html=True)
+
+# Display logo (if uploaded to GitHub as Bailey Discount - WhiteMan.png)
+try:
+    with open("Bailey Discount - WhiteMan.png", "rb") as file:
+        logo_image = file.read()
+    st.image(logo_image, width=200, use_column_width=False)
+except FileNotFoundError:
+    st.write("Logo not available. Upload Bailey Discount - WhiteMan.png to GitHub.")
 
 def get_distance(destination):
     try:
