@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 from urllib.parse import quote
-import base64
+import math
 
 # Google Maps API key (stored in secrets.toml)
 API_KEY = st.secrets["GOOGLE_API_KEY"]
@@ -13,6 +13,13 @@ ORIGIN = "880 East Collin Raye Drive, De Queen, AR 71832"
 FLAT_FEE_WITHIN_6_MILES = 20.00  # $20 flat fee for <= 6 miles
 BASE_FEE_BEYOND_6_MILES = 20.00  # $20 base fee for > 6 miles
 PER_MILE_RATE_BEYOND_6_MILES = 1.40  # $1.40 per mile for > 6 miles
+
+# Time calculation parameters
+AVERAGE_SPEED_MPH = 30  # Average speed for travel time
+UNLOAD_TIME_MINUTES = 30  # Fixed unload time
+TIME_INCREMENT = 30  # 30-minute increments
+MAX_BLOCK_TIME = 480  # Max 8 hours
+MIN_BLOCK_TIME = 30  # Min 30 minutes
 
 # Custom CSS for Bailey Blue background, white search bar, white text, and red results box
 st.markdown("""
@@ -86,6 +93,17 @@ def get_distance(destination):
     except Exception as e:
         return None, f"Error: {str(e)}"
 
+def calculate_block_time(distance):
+    # Calculate travel time (distance / speed * 60 to convert hours to minutes)
+    travel_time = (distance / AVERAGE_SPEED_MPH) * 60
+    # Add unload time
+    total_time = travel_time + UNLOAD_TIME_MINUTES
+    # Round to nearest 30-minute increment
+    rounded_time = math.ceil(total_time / TIME_INCREMENT) * TIME_INCREMENT
+    # Cap at max and min
+    block_time = min(max(rounded_time, MIN_BLOCK_TIME), MAX_BLOCK_TIME)
+    return block_time
+
 # Web app layout
 st.title("Bailey's Delivery Price Calculator")
 destination = st.text_input("Enter Delivery Address (e.g., 100 W New York Ave, De Queen, AR 71832)")
@@ -102,7 +120,10 @@ if st.button("Calculate"):
                 total_price = FLAT_FEE_WITHIN_6_MILES
             else:
                 total_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
-            st.success(f"Distance: {distance:.2f} miles\nTotal Price: ${total_price:.2f}")
+            # Calculate block-off time
+            block_time = calculate_block_time(distance)
+            # Display results
+            st.success(f"Distance: {distance:.2f} miles\nTotal Price: ${total_price:.2f}\nBlock Off Time: {block_time} minutes")
 
 # Display QR code (if uploaded to GitHub as qr_code.png)
 try:
