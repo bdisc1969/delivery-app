@@ -116,4 +116,12 @@ if st.button("Calculate"):
             else:
                 total_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
             block_time = calculate_block_time(distance)
-            st.success(f"Distance: {distance:.2f} miles\nTotal Price: ${total_price
+            st.success(f"Distance: {distance:.2f} miles\nTotal Price: ${total_price:.2f}\nBlock Off Time: {block_time} minutes")
+
+# Display QR code
+try:
+    with open("qr_code.png", "rb") as file:
+        qr_image = file.read()
+    st.image(qr_image, caption="Scan to access this app", width=150, use_container_width=False)
+except FileNotFoundError:
+    st.write("QR code not available. Upload qr_code.png to GitHub.")
