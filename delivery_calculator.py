@@ -14,9 +14,6 @@ FLAT_FEE_WITHIN_6_MILES = 20.00
 BASE_FEE_BEYOND_6_MILES = 20.00
 PER_MILE_RATE_BEYOND_6_MILES = 1.40
 
-# Truck weight threshold (lbs)
-STANDARD_TRUCK_MAX_WEIGHT = 5000
-
 # Time calculation parameters
 AVERAGE_SPEED_MPH = 30
 UNLOAD_TIME_MINUTES = 30
@@ -31,13 +28,7 @@ st.markdown("""
         background-color: #2a2e7f;
         color: #ffffff;
     }
-    .stTextInput > div > input {
-        background-color: #ffffff;
-        color: #000000;
-        font-size: 18px;
-        padding: 10px;
-        border-radius: 5px;
-    }
+    .stTextInput > div > input,
     .stNumberInput > div > input {
         background-color: #ffffff;
         color: #000000;
@@ -105,11 +96,20 @@ def calculate_block_time(distance):
     rounded_time = math.ceil(total_time / TIME_INCREMENT) * TIME_INCREMENT
     return min(max(rounded_time, MIN_BLOCK_TIME), MAX_BLOCK_TIME)
 
-def select_truck(weight_lbs):
-    if weight_lbs <= STANDARD_TRUCK_MAX_WEIGHT:
-        return "Standard Delivery Truck"
+def select_truck_and_multiplier(weight_lbs):
+    """
+    Returns:
+    - truck_description (str)
+    - price_multiplier (float)
+    """
+    if weight_lbs < 4000:
+        return "Truck #102 – Malena", 1.0
+    elif weight_lbs < 14000:
+        return "Truck #101 – Orben", 1.0
+    elif weight_lbs < 33000:
+        return "Truck #103 – Vondell", 1.0
     else:
-        return "Heavy Load Truck"
+        return "Multiple Trips Required", 1.5
 
 # Web app layout
 st.title("Bailey's Delivery Price Calculator")
@@ -133,20 +133,24 @@ if st.button("Calculate"):
         if error:
             st.error(error)
         else:
-            # Pricing
+            # Base pricing
             if distance <= 6:
-                total_price = FLAT_FEE_WITHIN_6_MILES
+                base_price = FLAT_FEE_WITHIN_6_MILES
             else:
-                total_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
+                base_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
 
-            # Time + Truck
+            # Truck selection & multiplier
+            truck, multiplier = select_truck_and_multiplier(weight_lbs)
+            total_price = base_price * multiplier
+
+            # Time
             block_time = calculate_block_time(distance)
-            truck = select_truck(weight_lbs)
 
             st.success(
                 f"Distance: {distance:.2f} miles\n"
                 f"Shipment Weight: {weight_lbs:.0f} lbs\n"
-                f"Recommended Truck: {truck}\n"
+                f"Assigned Truck: {truck}\n"
+                f"Price Multiplier: {multiplier}x\n"
                 f"Total Price: ${total_price:.2f}\n"
                 f"Block Off Time: {block_time} minutes"
             )
