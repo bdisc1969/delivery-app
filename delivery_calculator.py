@@ -21,6 +21,13 @@ TIME_INCREMENT = 30
 MAX_BLOCK_TIME = 480
 MIN_BLOCK_TIME = 30
 
+# Truck recommendation parameters
+MALENA_MAX_WEIGHT = 2500
+MALENA_MAX_DISTANCE = 15
+ORBEN_MAX_WEIGHT = 14000
+VONDELL_MAX_WEIGHT = 33000
+MULTI_TRIP_MULTIPLIER = 1.5
+
 # Custom CSS
 st.markdown("""
     <style>
@@ -96,20 +103,38 @@ def calculate_block_time(distance):
     rounded_time = math.ceil(total_time / TIME_INCREMENT) * TIME_INCREMENT
     return min(max(rounded_time, MIN_BLOCK_TIME), MAX_BLOCK_TIME)
 
-def select_truck_and_multiplier(weight_lbs):
+def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_delivery):
     """
     Returns:
     - truck_description (str)
     - price_multiplier (float)
     """
-    if weight_lbs < 4000:
+
+    # Consolidated deliveries default to Vondell
+    if consolidate_delivery == "Yes":
+        if weight_lbs <= VONDELL_MAX_WEIGHT:
+            return "Truck #103 – Vondell", 1.0
+        else:
+            return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
+
+    # Anything over 12' cannot go on Malena
+    if over_12ft == "Yes":
+        if weight_lbs <= ORBEN_MAX_WEIGHT:
+            return "Truck #101 – Orben", 1.0
+        elif weight_lbs <= VONDELL_MAX_WEIGHT:
+            return "Truck #103 – Vondell", 1.0
+        else:
+            return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
+
+    # Standard rules
+    if weight_lbs <= MALENA_MAX_WEIGHT and distance <= MALENA_MAX_DISTANCE:
         return "Truck #102 – Malena", 1.0
-    elif weight_lbs < 14000:
+    elif weight_lbs <= ORBEN_MAX_WEIGHT:
         return "Truck #101 – Orben", 1.0
-    elif weight_lbs < 33000:
+    elif weight_lbs <= VONDELL_MAX_WEIGHT:
         return "Truck #103 – Vondell", 1.0
     else:
-        return "Multiple Trips Required", 1.5
+        return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
 # Web app layout
 st.title("Bailey's Delivery Price Calculator")
@@ -122,6 +147,18 @@ weight_lbs = st.number_input(
     "Enter Shipment Weight (lbs)",
     min_value=0.0,
     step=100.0
+)
+
+over_12ft = st.radio(
+    "Any material over 12 feet long?",
+    ["No", "Yes"],
+    horizontal=True
+)
+
+consolidate_delivery = st.radio(
+    "Is there already a delivery scheduled that this order should ride with?",
+    ["No", "Yes"],
+    horizontal=True
 )
 
 if st.button("Calculate"):
@@ -140,7 +177,12 @@ if st.button("Calculate"):
                 base_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
 
             # Truck selection & multiplier
-            truck, multiplier = select_truck_and_multiplier(weight_lbs)
+            truck, multiplier = select_truck_and_multiplier(
+                weight_lbs,
+                distance,
+                over_12ft,
+                consolidate_delivery
+            )
             total_price = base_price * multiplier
 
             # Time
@@ -149,6 +191,8 @@ if st.button("Calculate"):
             st.success(
                 f"Distance: {distance:.2f} miles\n"
                 f"Shipment Weight: {weight_lbs:.0f} lbs\n"
+                f"Over 12 ft Material: {over_12ft}\n"
+                f"Consolidated Delivery: {consolidate_delivery}\n"
                 f"Assigned Truck: {truck}\n"
                 f"Price Multiplier: {multiplier}x\n"
                 f"Total Price: ${total_price:.2f}\n"
