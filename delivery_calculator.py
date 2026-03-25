@@ -50,17 +50,6 @@ st.markdown("""
         padding: 10px 20px;
         border-radius: 5px;
     }
-    .stMarkdown, .stError {
-        color: #ffffff;
-    }
-    .stSuccess {
-        background-color: #ff0000 !important;
-        color: #ffffff !important;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 18px;
-        white-space: pre-line;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -104,20 +93,15 @@ def calculate_block_time(distance):
     return min(max(rounded_time, MIN_BLOCK_TIME), MAX_BLOCK_TIME)
 
 def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_delivery):
-    """
-    Returns:
-    - truck_description (str)
-    - price_multiplier (float)
-    """
 
-    # Consolidated deliveries default to Vondell
+    # Consolidated deliveries → Vondell
     if consolidate_delivery == "Yes":
         if weight_lbs <= VONDELL_MAX_WEIGHT:
             return "Truck #103 – Vondell", 1.0
         else:
             return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
-    # Anything over 12' cannot go on Malena
+    # Over 12' → no Malena
     if over_12ft == "Yes":
         if weight_lbs <= ORBEN_MAX_WEIGHT:
             return "Truck #101 – Orben", 1.0
@@ -126,7 +110,7 @@ def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_del
         else:
             return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
-    # Standard rules
+    # Standard logic
     if weight_lbs <= MALENA_MAX_WEIGHT and distance <= MALENA_MAX_DISTANCE:
         return "Truck #102 – Malena", 1.0
     elif weight_lbs <= ORBEN_MAX_WEIGHT:
@@ -136,7 +120,7 @@ def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_del
     else:
         return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
-# Web app layout
+# App UI
 st.title("Bailey's Delivery Price Calculator")
 
 destination = st.text_input(
@@ -170,13 +154,13 @@ if st.button("Calculate"):
         if error:
             st.error(error)
         else:
-            # Base pricing
+            # Pricing
             if distance <= 6:
                 base_price = FLAT_FEE_WITHIN_6_MILES
             else:
                 base_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
 
-            # Truck selection & multiplier
+            # Truck logic
             truck, multiplier = select_truck_and_multiplier(
                 weight_lbs,
                 distance,
@@ -188,18 +172,32 @@ if st.button("Calculate"):
             # Time
             block_time = calculate_block_time(distance)
 
-            st.success(
-                f"Distance: {distance:.2f} miles\n"
-                f"Shipment Weight: {weight_lbs:.0f} lbs\n"
-                f"Over 12 ft Material: {over_12ft}\n"
-                f"Consolidated Delivery: {consolidate_delivery}\n"
-                f"Assigned Truck: {truck}\n"
-                f"Price Multiplier: {multiplier}x\n"
-                f"Total Price: ${total_price:.2f}\n"
-                f"Block Off Time: {block_time} minutes"
-            )
+            # CLEAN OUTPUT (NEW)
+            st.markdown(f"""
+            <div style="
+                background-color:#ffffff;
+                color:#000000;
+                padding:20px;
+                border-radius:10px;
+                font-size:18px;
+                line-height:1.6;
+            ">
 
-# Display QR code
+            <div style="font-size:32px; font-weight:bold; color:#d32f2f; margin-bottom:10px;">
+            🚚 {truck}
+            </div>
+
+            <hr style="margin:10px 0;">
+
+            <div><strong>Distance:</strong> {distance:.2f} miles</div>
+            <div><strong>Weight:</strong> {weight_lbs:.0f} lbs</div>
+            <div><strong>Delivery Price:</strong> ${total_price:.2f}</div>
+            <div><strong>Time Block:</strong> {block_time} minutes</div>
+
+            </div>
+            """, unsafe_allow_html=True)
+
+# QR code
 try:
     with open("qr_code.png", "rb") as file:
         qr_image = file.read()
