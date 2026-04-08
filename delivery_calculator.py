@@ -10,9 +10,9 @@ API_KEY = st.secrets["GOOGLE_API_KEY"]
 ORIGIN = "880 East Collin Raye Drive, De Queen, AR 71832"
 
 # Pricing
-FLAT_FEE_WITHIN_6_MILES = 20.00
-BASE_FEE_BEYOND_6_MILES = 20.00
-PER_MILE_RATE_BEYOND_6_MILES = 1.40
+FLAT_FEE_WITHIN_6_MILES = 30.00
+BASE_FEE_BEYOND_6_MILES = 30.00
+PER_MILE_RATE_BEYOND_6_MILES = 1.90
 
 # Time calculation parameters
 AVERAGE_SPEED_MPH = 30
@@ -94,14 +94,14 @@ def calculate_block_time(distance):
 
 def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_delivery):
 
-    # Consolidated deliveries → Vondell
+    # Consolidated deliveries -> Vondell
     if consolidate_delivery == "Yes":
         if weight_lbs <= VONDELL_MAX_WEIGHT:
             return "Truck #103 – Vondell", 1.0
         else:
             return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
-    # Over 12' → no Malena
+    # Over 12' -> no Malena
     if over_12ft == "Yes":
         if weight_lbs <= ORBEN_MAX_WEIGHT:
             return "Truck #101 – Orben", 1.0
@@ -172,7 +172,7 @@ if st.button("Calculate"):
             # Time
             block_time = calculate_block_time(distance)
 
-            # CLEAN OUTPUT (NEW)
+            # Clean output
             st.markdown(f"""
             <div style="
                 background-color:#ffffff;
