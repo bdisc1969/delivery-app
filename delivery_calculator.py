@@ -19,7 +19,7 @@ BASE_FEE_BEYOND_6_MILES = 25.00
 PER_MILE_RATE_BEYOND_6_MILES = 1.60
 
 # Fuel pricing inputs (ONLY thing you update going forward)
-CURRENT_DIESEL_PRICE = 5.00
+CURRENT_DIESEL_PRICE = 5.19
 BASELINE_DIESEL_PRICE = 3.50
 
 # How aggressively you pass fuel cost through (tune this)
