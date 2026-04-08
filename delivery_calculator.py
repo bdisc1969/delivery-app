@@ -9,26 +9,49 @@ API_KEY = st.secrets["GOOGLE_API_KEY"]
 # Starting address
 ORIGIN = "880 East Collin Raye Drive, De Queen, AR 71832"
 
-# Pricing
-FLAT_FEE_WITHIN_6_MILES = 30.00
-BASE_FEE_BEYOND_6_MILES = 30.00
-PER_MILE_RATE_BEYOND_6_MILES = 1.90
+# =========================
+# PRICING (BASE + FUEL LOGIC)
+# =========================
 
-# Time calculation parameters
+# Base pricing (your stable pricing)
+FLAT_FEE_WITHIN_6_MILES = 25.00
+BASE_FEE_BEYOND_6_MILES = 25.00
+PER_MILE_RATE_BEYOND_6_MILES = 1.60
+
+# Fuel pricing inputs (ONLY thing you update going forward)
+CURRENT_DIESEL_PRICE = 5.00
+BASELINE_DIESEL_PRICE = 3.50
+
+# How aggressively you pass fuel cost through (tune this)
+FUEL_COST_FACTOR = 0.20
+
+# Calculated fuel surcharge per mile
+FUEL_SURCHARGE_PER_MILE = max(
+    0,
+    (CURRENT_DIESEL_PRICE - BASELINE_DIESEL_PRICE) * FUEL_COST_FACTOR
+)
+
+# =========================
+# TIME CALCULATION
+# =========================
 AVERAGE_SPEED_MPH = 30
 UNLOAD_TIME_MINUTES = 30
 TIME_INCREMENT = 30
 MAX_BLOCK_TIME = 480
 MIN_BLOCK_TIME = 30
 
-# Truck recommendation parameters
+# =========================
+# TRUCK PARAMETERS
+# =========================
 MALENA_MAX_WEIGHT = 2500
 MALENA_MAX_DISTANCE = 15
 ORBEN_MAX_WEIGHT = 14000
 VONDELL_MAX_WEIGHT = 33000
 MULTI_TRIP_MULTIPLIER = 1.5
 
-# Custom CSS
+# =========================
+# UI STYLING
+# =========================
 st.markdown("""
     <style>
     .stApp {
@@ -53,7 +76,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Display logo
+# =========================
+# LOGO
+# =========================
 try:
     with open("Bailey Discount - WhiteMan.png", "rb") as file:
         logo_image = file.read()
@@ -61,6 +86,9 @@ try:
 except FileNotFoundError:
     st.write("Logo not available. Upload Bailey Discount - WhiteMan.png to GitHub.")
 
+# =========================
+# DISTANCE FUNCTION
+# =========================
 def get_distance(destination):
     try:
         origin_encoded = quote(ORIGIN)
@@ -86,22 +114,26 @@ def get_distance(destination):
     except Exception as e:
         return None, f"Error: {str(e)}"
 
+# =========================
+# TIME FUNCTION
+# =========================
 def calculate_block_time(distance):
     travel_time = (distance / AVERAGE_SPEED_MPH) * 60
     total_time = travel_time + UNLOAD_TIME_MINUTES
     rounded_time = math.ceil(total_time / TIME_INCREMENT) * TIME_INCREMENT
     return min(max(rounded_time, MIN_BLOCK_TIME), MAX_BLOCK_TIME)
 
+# =========================
+# TRUCK LOGIC
+# =========================
 def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_delivery):
 
-    # Consolidated deliveries -> Vondell
     if consolidate_delivery == "Yes":
         if weight_lbs <= VONDELL_MAX_WEIGHT:
             return "Truck #103 – Vondell", 1.0
         else:
             return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
-    # Over 12' -> no Malena
     if over_12ft == "Yes":
         if weight_lbs <= ORBEN_MAX_WEIGHT:
             return "Truck #101 – Orben", 1.0
@@ -110,7 +142,6 @@ def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_del
         else:
             return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
-    # Standard logic
     if weight_lbs <= MALENA_MAX_WEIGHT and distance <= MALENA_MAX_DISTANCE:
         return "Truck #102 – Malena", 1.0
     elif weight_lbs <= ORBEN_MAX_WEIGHT:
@@ -120,12 +151,12 @@ def select_truck_and_multiplier(weight_lbs, distance, over_12ft, consolidate_del
     else:
         return "Multiple Trips Required", MULTI_TRIP_MULTIPLIER
 
-# App UI
+# =========================
+# APP UI
+# =========================
 st.title("Bailey's Delivery Price Calculator")
 
-destination = st.text_input(
-    "Enter Delivery Address (e.g., 100 W New York Ave, De Queen, AR 71832)"
-)
+destination = st.text_input("Enter Delivery Address")
 
 weight_lbs = st.number_input(
     "Enter Shipment Weight (lbs)",
@@ -154,25 +185,24 @@ if st.button("Calculate"):
         if error:
             st.error(error)
         else:
-            # Pricing
+            # Apply fuel-adjusted rate
+            effective_rate = PER_MILE_RATE_BEYOND_6_MILES + FUEL_SURCHARGE_PER_MILE
+
             if distance <= 6:
                 base_price = FLAT_FEE_WITHIN_6_MILES
             else:
-                base_price = BASE_FEE_BEYOND_6_MILES + (distance * PER_MILE_RATE_BEYOND_6_MILES)
+                base_price = BASE_FEE_BEYOND_6_MILES + (distance * effective_rate)
 
-            # Truck logic
             truck, multiplier = select_truck_and_multiplier(
                 weight_lbs,
                 distance,
                 over_12ft,
                 consolidate_delivery
             )
-            total_price = base_price * multiplier
 
-            # Time
+            total_price = base_price * multiplier
             block_time = calculate_block_time(distance)
 
-            # Clean output
             st.markdown(f"""
             <div style="
                 background-color:#ffffff;
@@ -180,14 +210,13 @@ if st.button("Calculate"):
                 padding:20px;
                 border-radius:10px;
                 font-size:18px;
-                line-height:1.6;
             ">
 
-            <div style="font-size:32px; font-weight:bold; color:#d32f2f; margin-bottom:10px;">
+            <div style="font-size:32px; font-weight:bold; color:#d32f2f;">
             🚚 {truck}
             </div>
 
-            <hr style="margin:10px 0;">
+            <hr>
 
             <div><strong>Distance:</strong> {distance:.2f} miles</div>
             <div><strong>Weight:</strong> {weight_lbs:.0f} lbs</div>
@@ -197,10 +226,12 @@ if st.button("Calculate"):
             </div>
             """, unsafe_allow_html=True)
 
-# QR code
+# =========================
+# QR CODE
+# =========================
 try:
     with open("qr_code.png", "rb") as file:
         qr_image = file.read()
     st.image(qr_image, caption="Scan to access this app", width=150, use_container_width=False)
 except FileNotFoundError:
-    st.write("QR code not available. Upload qr_code.png to GitHub.")
+    st.write("QR code not available.")
